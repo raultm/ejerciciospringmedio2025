@@ -18,11 +18,11 @@ public class SaveSocioService {
     @Autowired
     SociosMapper sociosMapper;
 
-    public Socio execute(SocioCreate socioCreate){
+    public Socio execute(SocioCreate socioCreate) {
         return sociosRepository.save(Socio.builder()
-            .nombre(socioCreate.getNombre())
-            .perfil(socioCreate.getPerfil())
-            .build());
+                .nombre(socioCreate.getNombre())
+                .perfil(socioCreate.getPerfil())
+                .build());
     }
 
     public ResponseEntity<SocioDetail> response(SocioCreate socioCreate) {

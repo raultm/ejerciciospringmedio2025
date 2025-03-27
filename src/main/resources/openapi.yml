@@ -323,11 +323,24 @@ components:
           type: string
     SocioCreate:
       type: object
+      required:
+        - nombre
+        - perfil
+        - email
+        - nacimiento
       properties:
         nombre:
           type: string
+          example: Raul
         perfil:
           type: string
+        email:
+          type: string
+          format: email
+          example: usuario.apellido@juntaex.es
+        nacimiento:
+          type: string
+          format: date
     LibrosListResponse:
       type: object
       properties:
@@ -394,9 +407,9 @@ components:
         libro:
           $ref: "#/components/schemas/LibroDetail"
         expiraEn:
-          type: date
+          type: string
         devueltoEn:
-          type: date
+          type: string
     PrestamoDetail:
       type: object
       properties:
@@ -408,9 +421,9 @@ components:
         libro:
           $ref: "#/components/schemas/LibroDetail"
         expiraEn:
-          type: date
+          type: string
         devueltoEn:
-          type: date
+          type: string
     PrestamoCreate:
       type: object
       required:
