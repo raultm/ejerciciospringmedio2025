@@ -2,6 +2,7 @@ package es.acaex.cursospringmedio2024.services.prestamos;
 
 import java.time.LocalDate;
 import java.time.LocalTime;
+import java.time.Month;
 
 import org.springframework.stereotype.Service;
 
@@ -32,10 +33,6 @@ public class CalculaPrestamoService {
         return execute(socio, libro, localDate, LocalTime.now());
     }
 
-    private boolean isWeekend(LocalDate localDate) {
-        return localDate.getDayOfWeek().getValue() > 5;
-    }
-
     public Prestamo execute(Socio socio, Libro libro, LocalDate localDate, LocalTime localTime) {
 
         if (!socio.tienePrestamoVencido()) {
@@ -44,19 +41,33 @@ public class CalculaPrestamoService {
                     int diasPrestamo = 0;
                     switch (socio.getPerfil()) {
                         case "visitante":
-                            if (isWeekend(localDate)) {
-                                throw new PrestamoNoGestionableException("No puede sacar en fin de semana");
+                            if (isWeekend(localDate) || isSummer(localDate)) {
+                                throw new PrestamoNoGestionableException("No puede sacar en Fin de Semana o Verano");
                             }
-                            diasPrestamo = 7;
+                            if (isHorasLectivas(localTime)) {
+                                diasPrestamo = 7;
+                            } else {
+                                diasPrestamo = 3;
+                            }
                             break;
                         case "estudiante":
-                            if (isWeekend(localDate)) {
-                                throw new PrestamoNoGestionableException("No puede sacar en fin de semana");
+                            if (isWeekend(localDate) || isSummer(localDate)) {
+                                throw new PrestamoNoGestionableException("No puede sacar en Fin de Semana o Verano");
                             }
-                            diasPrestamo = 15;
+                            if (isHorasLectivas(localTime)) {
+                                diasPrestamo = 15;
+                            } else {
+                                diasPrestamo = 7;
+                            }
                             break;
                         case "profesor":
-                            diasPrestamo = 30;
+                            if (isSummer(localDate)) {
+                                diasPrestamo = 60;
+                            } else if (isHorasLectivas(localTime)) {
+                                diasPrestamo = 30;
+                            } else {
+                                diasPrestamo = 15;
+                            }
                             break;
                         default:
                             break;
@@ -76,6 +87,20 @@ public class CalculaPrestamoService {
         } else {
             throw new PrestamoNoGestionableException("El Socio tiene un préstamo retrasado");
         }
+    }
+
+    private boolean isWeekend(LocalDate localDate) {
+        return localDate.getDayOfWeek().getValue() > 5;
+    }
+
+    private boolean isSummer(LocalDate localDate) {
+        return localDate.getMonth().equals(Month.JULY)
+                || localDate.getMonth().equals(Month.AUGUST);
+    }
+
+    private boolean isHorasLectivas(LocalTime localTime) {
+        return localTime.isAfter(LocalTime.of(7, 59))
+                && localTime.isBefore(LocalTime.of(22, 1));
     }
 
 }
