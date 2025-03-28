@@ -3,6 +3,8 @@ package es.acaex.cursospringmedio2024.services.prestamos;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Month;
+import java.util.HashMap;
+import java.util.Map;
 
 import org.springframework.stereotype.Service;
 
@@ -33,59 +35,85 @@ public class CalculaPrestamoService {
         return execute(socio, libro, localDate, LocalTime.now());
     }
 
+    private final static Map<String, Map<String, Integer>> diasPorPerfilSituacion = new HashMap<String, Map<String, Integer>>() {
+        {
+            put("catedratico", new HashMap<String, Integer>() {
+                {
+                    put("vacaciones", 90);
+                    put("horariohabitual", 90);
+                    put("horarioguardia", 90);
+                }
+            });
+            put("profesor", new HashMap<String, Integer>() {
+                {
+                    put("vacaciones", 60);
+                    put("horariohabitual", 30);
+                    put("horarioguardia", 15);
+                }
+            });
+            put("estudiante", new HashMap<String, Integer>() {
+                {
+                    put("vacaciones", 0);
+                    put("horariohabitual", 15);
+                    put("horarioguardia", 7);
+                }
+            });
+            put("visitante", new HashMap<String, Integer>() {
+                {
+                    put("vacaciones", 0);
+                    put("horariohabitual", 7);
+                    put("horarioguardia", 3);
+                }
+            });
+        }
+    };
+
     public Prestamo execute(Socio socio, Libro libro, LocalDate localDate, LocalTime localTime) {
 
-        if (!socio.tienePrestamoVencido()) {
-            if (!socio.haSuperadoElLimiteDePrestamo()) {
-                if (!libro.estaEnPrestamo()) {
-                    int diasPrestamo = 0;
-                    switch (socio.getPerfil()) {
-                        case "visitante":
-                            if (isWeekend(localDate) || isSummer(localDate)) {
-                                throw new PrestamoNoGestionableException("No puede sacar en Fin de Semana o Verano");
-                            }
-                            if (isHorasLectivas(localTime)) {
-                                diasPrestamo = 7;
-                            } else {
-                                diasPrestamo = 3;
-                            }
-                            break;
-                        case "estudiante":
-                            if (isWeekend(localDate) || isSummer(localDate)) {
-                                throw new PrestamoNoGestionableException("No puede sacar en Fin de Semana o Verano");
-                            }
-                            if (isHorasLectivas(localTime)) {
-                                diasPrestamo = 15;
-                            } else {
-                                diasPrestamo = 7;
-                            }
-                            break;
-                        case "profesor":
-                            if (isSummer(localDate)) {
-                                diasPrestamo = 60;
-                            } else if (isHorasLectivas(localTime)) {
-                                diasPrestamo = 30;
-                            } else {
-                                diasPrestamo = 15;
-                            }
-                            break;
-                        default:
-                            break;
-                    }
+        validarQuePrestamoEsViable(socio, libro, localDate);
 
-                    return Prestamo.builder()
-                            .libro(libro)
-                            .socio(socio)
-                            .expiraEn(localDate.plusDays(diasPrestamo))
-                            .build();
-                } else {
-                    throw new PrestamoNoGestionableException("El Libro está prestado");
-                }
-            } else {
-                throw new PrestamoNoGestionableException("El Socio ha superado el límite de libros prestados");
-            }
-        } else {
+        return Prestamo.builder()
+                .libro(libro)
+                .socio(socio)
+                .expiraEn(localDate.plusDays(getDiasPrestamo(socio, localDate, localTime)))
+                .build();
+
+    }
+
+    private int getDiasPrestamo(Socio socio, LocalDate localDate, LocalTime localTime) {
+        String perfil = socio.getPerfil();
+        String situacion = getSituacion(localDate, localTime);
+
+        int diasPrestamo = diasPorPerfilSituacion.get(perfil).get(situacion);
+        if (diasPrestamo == 0) {
+            throw new PrestamoNoGestionableException(
+                    "No se puede gestionar ese perfil/situacion (Fin de Semana/Verano)");
+        }
+        return diasPrestamo;
+    }
+
+    private String getSituacion(LocalDate localDate, LocalTime localTime) {
+        if (isSummer(localDate)) {
+            return "vacaciones";
+        }
+        if (!isHorasLectivas(localTime)) {
+            return "horarioguardia";
+        }
+        return "horariohabitual";
+    }
+
+    private void validarQuePrestamoEsViable(Socio socio, Libro libro, LocalDate localDate) {
+        if (socio.tienePrestamoVencido()) {
             throw new PrestamoNoGestionableException("El Socio tiene un préstamo retrasado");
+        }
+        if (socio.haSuperadoElLimiteDePrestamo()) {
+            throw new PrestamoNoGestionableException("El Socio ha superado el límite de libros prestados");
+        }
+        if (libro.estaEnPrestamo()) {
+            throw new PrestamoNoGestionableException("El Libro está prestado");
+        }
+        if (!socio.getPerfil().equals("profesor") && isWeekend(localDate)) {
+            throw new PrestamoNoGestionableException("Fin de Semana");
         }
     }
 
