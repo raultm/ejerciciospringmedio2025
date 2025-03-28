@@ -72,12 +72,23 @@ public class CalculaPrestamoService {
 
         validarQuePrestamoEsViable(socio, libro, localDate);
 
+        int diasPrestamo = getDiasPrestamo(socio, localDate, localTime);
+
+        diasPrestamo = modificacionesPorSituacionesAdicionales(diasPrestamo, libro);
+
         return Prestamo.builder()
                 .libro(libro)
                 .socio(socio)
-                .expiraEn(localDate.plusDays(getDiasPrestamo(socio, localDate, localTime)))
+                .expiraEn(localDate.plusDays(diasPrestamo))
                 .build();
 
+    }
+
+    private int modificacionesPorSituacionesAdicionales(int diasPrestamo, Libro libro) {
+        if (libro.esMuyDemandado()) {
+            diasPrestamo = diasPrestamo - 3;
+        }
+        return diasPrestamo;
     }
 
     private int getDiasPrestamo(Socio socio, LocalDate localDate, LocalTime localTime) {

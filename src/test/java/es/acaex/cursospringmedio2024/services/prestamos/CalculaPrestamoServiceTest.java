@@ -208,4 +208,17 @@ public class CalculaPrestamoServiceTest {
 
         assertThat(ex.getMessage(), containsString("Verano"));
     }
+
+    @Test
+    void unEstudianteAlSacarLibroConAltaDemandaEnHorarioGuardiaPrestamoDe4Dias() {
+        fechaDePrestamo = LocalDate.parse("2024-09-02");
+        horaPrestamo = LocalTime.of(7, 59);
+        when(socio.getPerfil()).thenReturn("estudiante");
+        when(libro.esMuyDemandado()).thenReturn(true);
+
+        Prestamo prestamo = calculaPrestamoService.execute(socio, libro,
+                fechaDePrestamo, horaPrestamo);
+
+        assertThat(prestamo.getExpiraEn().toString(), is("2024-09-06"));
+    }
 }

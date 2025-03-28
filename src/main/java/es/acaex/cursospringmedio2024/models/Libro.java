@@ -1,6 +1,7 @@
 package es.acaex.cursospringmedio2024.models;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.List;
 
 import jakarta.persistence.Entity;
 import jakarta.persistence.GeneratedValue;
@@ -12,8 +13,8 @@ import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
-@Entity(name = "libros")	
-@Data  
+@Entity(name = "libros")
+@Data
 @Builder
 @AllArgsConstructor
 @NoArgsConstructor
@@ -28,7 +29,12 @@ public class Libro {
     @OneToMany(mappedBy = "libro")
     private List<Prestamo> prestamos = new ArrayList<>();
 
-    public boolean estaEnPrestamo(){
+    public boolean estaEnPrestamo() {
         return prestamos.stream().anyMatch(prestamo -> prestamo.getDevueltoEn() == null);
+    }
+
+    public boolean esMuyDemandado() {
+        // TODO Auto-generated method stub
+        throw new UnsupportedOperationException("Unimplemented method 'esMuyDemandado'");
     }
 }
